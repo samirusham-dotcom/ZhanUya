@@ -96,7 +96,12 @@ export default function ParentDashboard({ session, onLeave }) {
               const stale = c.location?.ts && Date.now() - c.location.ts > STALE_MS
               return (
                 <div key={c.id} className={`kid-row${c.sos?.active ? ' kid-row--sos' : ''}`}>
-                  <div className="kid-row__name">{c.sos?.active ? '🆘' : '🟢'} {c.name}</div>
+                  <div className="kid-row__left">
+                    <div className="kid-row__name">{c.sos?.active ? '🆘' : '🟢'} {c.name}</div>
+                    {c.status?.text && !c.sos?.active && (
+                      <div className="kid-row__status">💬 {c.status.text}</div>
+                    )}
+                  </div>
                   <div className="kid-row__meta">
                     {c.location ? (
                       <>📍 {timeAgo(c.location.ts)}{stale ? ' · связь?' : ''}</>

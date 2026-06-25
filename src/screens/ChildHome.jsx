@@ -4,9 +4,10 @@ import { nearestZone, formatDistance, formatDuration } from '../lib/geo'
 import { getWalkingRoute } from '../lib/routing'
 import { SAFE_ZONES } from '../data/safeZones'
 import SafeMap, { ALMATY } from '../components/SafeMap'
-import { shareLocation, raiseSOS, clearSOS } from '../lib/realtime'
+import { shareLocation, raiseSOS, clearSOS, setStatus } from '../lib/realtime'
 
 const DEMO_LOCATION = { ...ALMATY, accuracy: 15 }
+const QUICK_STATUSES = ['Вышел из школы', 'Сел в автобус', 'Почти дома', 'Я дома ✅']
 
 export default function ChildHome({ session, onLeave }) {
   const code = session.code
@@ -18,7 +19,14 @@ export default function ChildHome({ session, onLeave }) {
   const [isSearching, setIsSearching] = useState(false)
   const [message, setMessage] = useState('')
   const [sosActive, setSosActive] = useState(false)
+  const [sentStatus, setSentStatus] = useState(null)
   const lastShare = useRef(0)
+
+  function sendStatus(text) {
+    setStatus(code, childId, text)
+    setSentStatus(text)
+    setMessage(`✅ Отправлено родителю: ${text}`)
+  }
 
   const user = useDemo ? DEMO_LOCATION : position
   const locating = status === 'locating' && !useDemo
@@ -152,6 +160,20 @@ export default function ChildHome({ session, onLeave }) {
             {destination.phone !== '—' && (
               <a className="route-card__call" href={`tel:${destination.phone}`}>☎ Позвонить</a>
             )}
+          </div>
+        )}
+
+        {!sosActive && (
+          <div className="quick-replies">
+            {QUICK_STATUSES.map((s) => (
+              <button
+                key={s}
+                className={`chip${sentStatus === s ? ' chip--sent' : ''}`}
+                onClick={() => sendStatus(s)}
+              >
+                {s}
+              </button>
+            ))}
           </div>
         )}
 

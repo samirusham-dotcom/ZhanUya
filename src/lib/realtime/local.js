@@ -80,6 +80,13 @@ export function clearSOS(code, childId) {
   write(family)
 }
 
+export function setStatus(code, childId, text) {
+  const family = read(code)
+  if (!family?.children?.[childId]) return
+  family.children[childId].status = { text, ts: Date.now() }
+  write(family)
+}
+
 export function subscribe(code, cb) {
   const onMessage = (e) => { if (e.data?.code === code) cb(e.data.family) }
   const onStorage = (e) => { if (e.key === keyFor(code) && e.newValue) cb(JSON.parse(e.newValue)) }

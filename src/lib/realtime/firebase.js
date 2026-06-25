@@ -75,6 +75,14 @@ export function clearSOS(code, childId) {
   }).catch((e) => console.warn('[firestore] clearSOS', e.code || e.message))
 }
 
+// One-tap status update ("в автобусе", "я дома") — the everyday reassurance flow.
+export function setStatus(code, childId, text) {
+  return updateDoc(ref(code), {
+    [`children.${childId}.status`]: { text, ts: Date.now() },
+    updatedAt: Date.now(),
+  }).catch((e) => console.warn('[firestore] setStatus', e.code || e.message))
+}
+
 export function subscribe(code, cb) {
   return onSnapshot(
     ref(code),

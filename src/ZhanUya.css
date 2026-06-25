@@ -337,6 +337,41 @@
   z-index: 999;
 }
 .code-banner__code { font-size: 34px; font-weight: 800; letter-spacing: 6px; }
+.copy-btn {
+  margin-top: 8px;
+  padding: 8px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* Compact code strip shown once children are linked (to add more) */
+.code-strip {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 7px 14px;
+  background: #1e293b;
+  color: #cbd5e1;
+  font-size: 13px;
+  z-index: 999;
+}
+.code-strip b { color: #fff; letter-spacing: 2px; }
+.copy-mini {
+  background: none;
+  border: 1px solid #475569;
+  color: #cbd5e1;
+  border-radius: 8px;
+  font-size: 12px;
+  padding: 4px 10px;
+  cursor: pointer;
+}
 
 /* Child "I'm OK" button */
 .ok-btn {
@@ -470,3 +505,37 @@
 .onb-item__emoji { font-size: 26px; line-height: 1; }
 .onb-item b { font-size: 15px; color: #f1f5f9; }
 .onb-item p { font-size: 13px; color: #94a3b8; margin: 2px 0 0; line-height: 1.4; }
+
+/* ===== Micro-interactions / entrance animations ===== */
+@keyframes fadeup {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+.status-pill, .route-card, .kid-row { animation: fadeup 0.25s ease both; }
+
+@keyframes popin {
+  from { opacity: 0; transform: scale(0.92); }
+  to { opacity: 1; transform: none; }
+}
+.alert-overlay__pulse,
+.alert-overlay__title,
+.alert-overlay__sub,
+.alert-overlay__coords,
+.alert-overlay .btn-primary,
+.alert-overlay__call { animation: popin 0.3s ease both; }
+
+.chip { transition: transform 0.08s ease, background 0.2s ease, border-color 0.2s ease; }
+.chip:active { transform: scale(0.95); }
+.btn-primary { transition: transform 0.08s ease, opacity 0.2s ease; }
+.btn-primary:active { transform: scale(0.98); }
+.copy-btn:active, .copy-mini:active { transform: scale(0.96); }
+.ok-btn { transition: transform 0.08s ease; }
+.ok-btn:active { transform: scale(0.98); }
+
+/* Respect users who prefer no motion */
+@media (prefers-reduced-motion: reduce) {
+  .status-pill, .route-card, .kid-row,
+  .alert-overlay__pulse, .alert-overlay__title, .alert-overlay__sub,
+  .alert-overlay__coords, .alert-overlay .btn-primary, .alert-overlay__call,
+  .sos-btn::before, .user-pulse { animation: none; }
+}

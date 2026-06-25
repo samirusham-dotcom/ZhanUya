@@ -37,7 +37,18 @@ export default function ParentDashboard({ session, onLeave }) {
   const [family, setFamily] = useState(() => loadCached(code))
   const [, setTick] = useState(0) // forces freshness timers to re-render
   const [alertOpen, setAlertOpen] = useState(true)
+  const [copied, setCopied] = useState(false)
   const prevSOS = useRef(new Set())
+
+  function copyCode() {
+    navigator.clipboard
+      ?.writeText(code)
+      .then(() => {
+        setCopied(true)
+        setTimeout(() => setCopied(false), 1500)
+      })
+      .catch(() => {})
+  }
 
   useEffect(
     () =>
@@ -97,10 +108,18 @@ export default function ParentDashboard({ session, onLeave }) {
         <button className="topbar__role" onClick={onLeave}>сменить</button>
       </header>
 
-      {children.length === 0 && (
+      {children.length === 0 ? (
         <div className="code-banner">
           Передайте детям родительский код:
           <span className="code-banner__code">{code}</span>
+          <button className="copy-btn" onClick={copyCode}>
+            {copied ? '✓ Скопировано' : '⧉ Скопировать код'}
+          </button>
+        </div>
+      ) : (
+        <div className="code-strip">
+          <span>🔗 Код семьи · <b>{code}</b></span>
+          <button className="copy-mini" onClick={copyCode}>{copied ? '✓ скопировано' : '⧉ копировать'}</button>
         </div>
       )}
 

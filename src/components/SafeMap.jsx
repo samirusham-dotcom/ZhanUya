@@ -15,7 +15,6 @@ const ZONE_GLYPH = {
   public: '🏛',
 }
 
-// Emoji pin via divIcon (avoids Leaflet's broken default-marker paths under bundlers).
 function zoneIcon(type, active) {
   return L.divIcon({
     className: 'zone-marker',
@@ -26,35 +25,46 @@ function zoneIcon(type, active) {
   })
 }
 
-const userIcon = L.divIcon({
-  className: 'user-marker',
-  html: '<div class="user-dot"><span class="user-pulse"></span></div>',
-  iconSize: [24, 24],
-  iconAnchor: [12, 12],
-})
+function personIcon(name, danger) {
+  const label = (name || '').slice(0, 12)
+  return L.divIcon({
+    className: 'user-marker',
+    html: `<div class="user-dot${danger ? ' user-dot--danger' : ''}"><span class="user-pulse"></span></div>
+           ${label ? `<span class="user-label">${label}</span>` : ''}`,
+    iconSize: [24, 24],
+    iconAnchor: [12, 12],
+  })
+}
 
-// Pans/zooms the map to follow the route or the user.
-function MapFocus({ route, user }) {
+// Fits the map to all routes, else all people, else Almaty. `focusKey` lets the
+// caller force a refit when the meaningful set changes.
+function MapFocus({ routes, people, focusKey }) {
   const map = useMap()
   useEffect(() => {
-    if (route?.coordinates?.length) {
-      map.fitBounds(route.coordinates, { padding: [60, 80] })
-    } else if (user) {
-      map.setView([user.lat, user.lng], 15)
+    const routePts = routes.flat()
+    if (routePts.length) {
+      map.fitBounds(routePts, { padding: [60, 80] })
+    } else if (people.length === 1) {
+      map.setView([people[0].lat, people[0].lng], 15)
+    } else if (people.length > 1) {
+      map.fitBounds(people.map((p) => [p.lat, p.lng]), { padding: [60, 80] })
     }
-  }, [route, user, map])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusKey, map])
   return null
 }
 
-export default function SafeMap({ user, zones, destination, route }) {
-  const center = user ? [user.lat, user.lng] : [ALMATY.lat, ALMATY.lng]
+export default function SafeMap({ zones = [], people = [], routes = [], destinationId }) {
+  const first = people[0]
+  const center = first ? [first.lat, first.lng] : [ALMATY.lat, ALMATY.lng]
+  const focusKey = `${routes.map((r) => r.length).join('-')}|${people.map((p) => p.id).join('-')}|${destinationId || ''}`
 
   return (
     <MapContainer center={center} zoom={14} zoomControl={false} className="map" attributionControl={false}>
       <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
 
       {zones.map((z) => (
-        <Marker key={z.id} position={[z.lat, z.lng]} icon={zoneIcon(z.type, destination?.id === z.id)}>
+        <Marker key={z.id} position={[z.lat, z.lng]} icon={zoneIcon(z.type, destinationId === z.id)}>
           <Popup>
             <strong>{z.name}</strong>
             <br />
@@ -65,16 +75,19 @@ export default function SafeMap({ user, zones, destination, route }) {
         </Marker>
       ))}
 
-      {user && <Marker position={[user.lat, user.lng]} icon={userIcon} />}
-
-      {route && (
-        <Polyline
-          positions={route.coordinates}
-          pathOptions={{ color: '#2563eb', weight: 6, opacity: 0.9 }}
-        />
+      {routes.map((coords, i) =>
+        coords && coords.length ? (
+          <Polyline key={`route-${i}`} positions={coords} pathOptions={{ color: '#2563eb', weight: 6, opacity: 0.9 }} />
+        ) : null,
       )}
 
-      <MapFocus route={route} user={user} />
+      {people.map((p) => (
+        <Marker key={p.id} position={[p.lat, p.lng]} icon={personIcon(p.name, p.danger)}>
+          {p.name && <Popup>{p.name}</Popup>}
+        </Marker>
+      ))}
+
+      <MapFocus routes={routes} people={people} focusKey={focusKey} />
     </MapContainer>
   )
 }

@@ -4,40 +4,70 @@ import { SAFE_ZONES } from '../data/safeZones'
 import { formatDistance, formatDuration } from '../lib/geo'
 import SafeMap from '../components/SafeMap'
 
+const STALE_MS = 30000
+
+function timeAgo(ts) {
+  if (!ts) return '—'
+  const s = Math.max(0, Math.round((Date.now() - ts) / 1000))
+  if (s < 60) return `${s} с назад`
+  return `${Math.round(s / 60)} мин назад`
+}
+
+function childWord(n) {
+  const d = n % 10
+  const dd = n % 100
+  if (d === 1 && dd !== 11) return 'ребёнок'
+  if (d >= 2 && d <= 4 && (dd < 12 || dd > 14)) return 'ребёнка'
+  return 'детей'
+}
+
 export default function ParentDashboard({ session, onLeave }) {
   const code = session.code
   const [family, setFamily] = useState(null)
-  const [alertOpen, setAlertOpen] = useState(false)
-  const wasActive = useRef(false)
+  const [, setTick] = useState(0) // forces freshness timers to re-render
+  const [alertOpen, setAlertOpen] = useState(true)
+  const prevSOS = useRef(new Set())
 
   useEffect(() => subscribe(code, setFamily), [code])
-
-  const sos = family?.sos?.active ? family.sos : null
-  const child = family?.child
-  const childLoc = family?.location ? { lat: family.location.lat, lng: family.location.lng } : null
-  const zone = sos ? SAFE_ZONES.find((z) => z.id === sos.zoneId) : null
-  const route = sos?.route ? { coordinates: sos.route, distance: sos.distance, duration: sos.duration } : null
-
-  // Buzz + open the alert the moment an SOS fires.
   useEffect(() => {
-    if (sos && !wasActive.current) {
-      wasActive.current = true
+    const id = setInterval(() => setTick((t) => t + 1), 5000)
+    return () => clearInterval(id)
+  }, [])
+
+  const children = family?.children ? Object.values(family.children) : []
+  const sosChildren = children.filter((c) => c.sos?.active)
+  const sosKey = sosChildren.map((c) => c.id + (c.sos?.ts || '')).join(',')
+
+  // Buzz + open when a NEW child raises SOS (not on every snapshot).
+  useEffect(() => {
+    const ids = new Set(sosChildren.map((c) => c.id))
+    let isNew = false
+    ids.forEach((id) => { if (!prevSOS.current.has(id)) isNew = true })
+    if (isNew) {
       setAlertOpen(true)
       navigator.vibrate?.([300, 120, 300, 120, 600])
     }
-    if (!sos) {
-      wasActive.current = false
-      setAlertOpen(false)
-    }
-  }, [sos])
+    prevSOS.current = ids
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sosKey])
+
+  const people = children
+    .filter((c) => c.location)
+    .map((c) => ({ id: c.id, name: c.name, lat: c.location.lat, lng: c.location.lng, danger: !!c.sos?.active }))
+  const routes = sosChildren.filter((c) => c.sos?.route).map((c) => c.sos.route)
+
+  const primary = sosChildren[0]
+  const primaryZone = primary ? SAFE_ZONES.find((z) => z.id === primary.sos.zoneId) : null
 
   return (
     <div className="app">
       <header className="topbar">
         <div className="topbar__brand">👩‍👦 ZhanUya</div>
         <div className="topbar__status">
-          {child ? (
-            sos ? <span className="status-danger">🆘 SOS · {child.name}</span> : <>{child.name} · в безопасности</>
+          {sosChildren.length > 0 ? (
+            <span className="status-danger">🆘 SOS · {sosChildren.map((c) => c.name).join(', ')}</span>
+          ) : children.length ? (
+            `${children.length} ${childWord(children.length)} · в безопасности`
           ) : (
             'Ожидание ребёнка…'
           )}
@@ -45,59 +75,75 @@ export default function ParentDashboard({ session, onLeave }) {
         <button className="topbar__role" onClick={onLeave}>сменить</button>
       </header>
 
-      {!child && (
+      {children.length === 0 && (
         <div className="code-banner">
-          Передайте ребёнку родительский код:
+          Передайте детям родительский код:
           <span className="code-banner__code">{code}</span>
         </div>
       )}
-      {child && !sos && (
-        <div className="link-banner">🔗 {child.name} · код {code}{childLoc ? '' : ' · ждём геопозицию'}</div>
-      )}
 
       <main className="map-wrap">
-        <SafeMap user={childLoc} zones={SAFE_ZONES} destination={zone} route={route} />
-        {sos && !alertOpen && (
+        <SafeMap zones={SAFE_ZONES} people={people} routes={routes} destinationId={primaryZone?.id} />
+        {sosChildren.length > 0 && !alertOpen && (
           <button className="sos-reopen" onClick={() => setAlertOpen(true)}>🆘 Открыть оповещение</button>
         )}
       </main>
 
-      {sos && (
+      {children.length > 0 && (
         <section className="panel">
-          <div className="route-card route-card--alert">
-            <div className="route-card__title">🆘 {child?.name} нажал SOS</div>
-            {zone && (
-              <div className="route-card__meta">
-                Идёт к: {zone.name}
-                {sos.distance != null && <> · 📏 {formatDistance(sos.distance)} · ⏱ {formatDuration(sos.duration)}</>}
-              </div>
-            )}
-            <div className="alert-actions">
-              {zone && zone.phone !== '—' && (
-                <a className="route-card__call" href={`tel:${zone.phone}`}>☎ Позвонить в зону</a>
+          <div className="kid-list">
+            {children.map((c) => {
+              const stale = c.location?.ts && Date.now() - c.location.ts > STALE_MS
+              return (
+                <div key={c.id} className={`kid-row${c.sos?.active ? ' kid-row--sos' : ''}`}>
+                  <div className="kid-row__name">{c.sos?.active ? '🆘' : '🟢'} {c.name}</div>
+                  <div className="kid-row__meta">
+                    {c.location ? (
+                      <>📍 {timeAgo(c.location.ts)}{stale ? ' · связь?' : ''}</>
+                    ) : (
+                      'ждём геопозицию…'
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
+          {primary && primaryZone && (
+            <div className="route-card route-card--alert">
+              <div className="route-card__title">🆘 {primary.name} → {primaryZone.name}</div>
+              {primary.sos.distance != null && (
+                <div className="route-card__meta">
+                  📏 {formatDistance(primary.sos.distance)} · ⏱ {formatDuration(primary.sos.duration)}
+                </div>
+              )}
+              {primaryZone.phone !== '—' && (
+                <a className="route-card__call" href={`tel:${primaryZone.phone}`}>☎ Позвонить в зону</a>
               )}
             </div>
-          </div>
+          )}
         </section>
       )}
 
-      {/* Full-screen SOS alert */}
-      {alertOpen && sos && (
+      {alertOpen && primary && (
         <div className="alert-overlay">
           <div className="alert-overlay__pulse">🆘</div>
-          <h1 className="alert-overlay__title">SOS от {child?.name}</h1>
-          {zone && (
+          <h1 className="alert-overlay__title">SOS от {primary.name}</h1>
+          {sosChildren.length > 1 && (
+            <p className="alert-overlay__sub">+ ещё {sosChildren.length - 1} в тревоге</p>
+          )}
+          {primaryZone && (
             <p className="alert-overlay__sub">
-              Идёт к безопасной зоне «{zone.name}»
-              {sos.distance != null && (
-                <><br />📏 {formatDistance(sos.distance)} · ⏱ {formatDuration(sos.duration)} пешком</>
+              Идёт к безопасной зоне «{primaryZone.name}»
+              {primary.sos.distance != null && (
+                <><br />📏 {formatDistance(primary.sos.distance)} · ⏱ {formatDuration(primary.sos.duration)} пешком</>
               )}
             </p>
           )}
-          <p className="alert-overlay__coords">📍 {sos.lat.toFixed(5)}, {sos.lng.toFixed(5)}</p>
+          <p className="alert-overlay__coords">📍 {primary.sos.lat.toFixed(5)}, {primary.sos.lng.toFixed(5)}</p>
           <button className="btn-primary" onClick={() => setAlertOpen(false)}>Показать на карте</button>
-          {zone && zone.phone !== '—' && (
-            <a className="alert-overlay__call" href={`tel:${zone.phone}`}>☎ Позвонить в «{zone.name}»</a>
+          {primaryZone && primaryZone.phone !== '—' && (
+            <a className="alert-overlay__call" href={`tel:${primaryZone.phone}`}>☎ Позвонить в «{primaryZone.name}»</a>
           )}
         </div>
       )}

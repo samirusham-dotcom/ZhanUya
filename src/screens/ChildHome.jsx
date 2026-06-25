@@ -6,11 +6,11 @@ import { SAFE_ZONES } from '../data/safeZones'
 import SafeMap, { ALMATY } from '../components/SafeMap'
 import { shareLocation, raiseSOS, clearSOS } from '../lib/realtime'
 
-// Demo start point so SOS is always demoable away from Almaty / when GPS is off.
 const DEMO_LOCATION = { ...ALMATY, accuracy: 15 }
 
 export default function ChildHome({ session, onLeave }) {
   const code = session.code
+  const childId = session.childId
   const { position, status } = useGeolocation()
   const [useDemo, setUseDemo] = useState(false)
   const [destination, setDestination] = useState(null)
@@ -24,15 +24,16 @@ export default function ChildHome({ session, onLeave }) {
   const locating = status === 'locating' && !useDemo
   const blocked = (status === 'denied' || status === 'unavailable') && !useDemo
 
-  // Continuously (throttled ~8s) share live location with the parent.
+  // Stream live location to the parent. Faster cadence while an SOS is active.
   useEffect(() => {
-    if (!user || !code) return
+    if (!user || !code || !childId) return
+    const interval = sosActive ? 4000 : 8000
     const now = Date.now()
-    if (now - lastShare.current > 8000) {
+    if (now - lastShare.current > interval) {
       lastShare.current = now
-      shareLocation(code, { lat: user.lat, lng: user.lng, accuracy: user.accuracy })
+      shareLocation(code, childId, { lat: user.lat, lng: user.lng, accuracy: user.accuracy })
     }
-  }, [user, code])
+  }, [user, code, childId, sosActive])
 
   async function triggerSOS() {
     if (!user) {
@@ -52,7 +53,6 @@ export default function ChildHome({ session, onLeave }) {
     }
     setDestination(near.zone)
 
-    // 1) Alert the parent IMMEDIATELY — never gate the SOS on routing.
     const base = {
       lat: user.lat,
       lng: user.lng,
@@ -60,20 +60,33 @@ export default function ChildHome({ session, onLeave }) {
       zoneName: near.zone.name,
       zonePhone: near.zone.phone,
     }
-    setSosActive(true)
-    raiseSOS(code, base)
-    setMessage('✅ Родитель уведомлён! Строим маршрут…')
 
-    // 2) Then build the route (best-effort) and enrich the alert.
+    // Refresh location right now so the parent sees the latest position with the alert.
+    lastShare.current = Date.now()
+    shareLocation(code, childId, { lat: user.lat, lng: user.lng, accuracy: user.accuracy })
+
+    // 1) Alert the parent and CONFIRM it was delivered (don't gate on routing).
+    setMessage('🚨 Отправляем сигнал родителю…')
+    try {
+      await raiseSOS(code, childId, base)
+      setSosActive(true)
+      setMessage('✅ Родитель уведомлён! Строим маршрут…')
+    } catch {
+      setIsSearching(false)
+      setMessage('⚠️ Не удалось отправить сигнал. Проверь интернет и попробуй снова')
+      return
+    }
+
+    // 2) Build the route (best-effort) and enrich the alert.
     try {
       const built = await getWalkingRoute(user, near.zone)
       setRoute(built)
-      raiseSOS(code, {
+      raiseSOS(code, childId, {
         ...base,
         route: built.coordinates,
         distance: built.distance,
         duration: built.duration,
-      })
+      }).catch(() => {})
       setMessage(`✅ Родитель уведомлён! Иди к: ${near.zone.name}`)
     } catch {
       setMessage(`✅ Родитель уведомлён. Иди к: ${near.zone.name}`)
@@ -87,8 +100,11 @@ export default function ChildHome({ session, onLeave }) {
     setRoute(null)
     setDestination(null)
     setMessage('')
-    clearSOS(code)
+    clearSOS(code, childId)
   }
+
+  const people = user ? [{ id: 'me', name: '', lat: user.lat, lng: user.lng, danger: sosActive }] : []
+  const routes = route ? [route.coordinates] : []
 
   return (
     <div className="app">
@@ -100,7 +116,7 @@ export default function ChildHome({ session, onLeave }) {
         <button className="topbar__role" onClick={onLeave}>сменить</button>
       </header>
 
-      <div className="link-banner">🔗 Связано с семьёй · код {code}</div>
+      <div className="link-banner">🔗 {session.name || 'Ребёнок'} · код {code}</div>
 
       <main className="map-wrap">
         {locating && (
@@ -119,7 +135,7 @@ export default function ChildHome({ session, onLeave }) {
           </div>
         )}
         {!locating && !blocked && (
-          <SafeMap user={user} zones={SAFE_ZONES} destination={destination} route={route} />
+          <SafeMap zones={SAFE_ZONES} people={people} routes={routes} destinationId={destination?.id} />
         )}
       </main>
 
@@ -131,6 +147,7 @@ export default function ChildHome({ session, onLeave }) {
             <div className="route-card__title">📍 {destination.name}</div>
             <div className="route-card__meta">
               📏 {formatDistance(route.distance)} · ⏱ {formatDuration(route.duration)} пешком
+              {route.approximate && ' · примерно'}
             </div>
             {destination.phone !== '—' && (
               <a className="route-card__call" href={`tel:${destination.phone}`}>☎ Позвонить</a>
@@ -141,7 +158,7 @@ export default function ChildHome({ session, onLeave }) {
         {!sosActive ? (
           <button className="sos-btn" onClick={triggerSOS} disabled={isSearching || !user}>
             {isSearching ? (
-              <><span className="spinner spinner--sm" /> Поиск…</>
+              <><span className="spinner spinner--sm" /> Отправка…</>
             ) : (
               <>⚠️ SOS — оповестить родителя</>
             )}

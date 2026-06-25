@@ -1,6 +1,10 @@
 import { useState } from 'react'
 import { joinFamily } from '../lib/realtime'
 
+// Remember this browser's child identity per family code, so reopening/rejoining
+// the same family reuses the same child instead of creating a ghost duplicate.
+const childKey = (code) => `zhanuya:child:${code}`
+
 export default function ChildLink({ name, onJoined, onBack }) {
   const [code, setCode] = useState('')
   const [error, setError] = useState('')
@@ -9,9 +13,12 @@ export default function ChildLink({ name, onJoined, onBack }) {
   async function join() {
     setError('')
     setBusy(true)
+    const c = code.trim()
     try {
-      const { childId } = await joinFamily(code.trim(), name)
-      onJoined(code.trim(), childId)
+      const existing = localStorage.getItem(childKey(c)) || undefined
+      const { childId } = await joinFamily(c, name, existing)
+      localStorage.setItem(childKey(c), childId)
+      onJoined(c, childId)
     } catch (e) {
       setError(e.message || 'Не удалось подключиться')
       setBusy(false)

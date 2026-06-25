@@ -16,7 +16,7 @@ export default function ParentDashboard({ session, onLeave }) {
   const child = family?.child
   const childLoc = family?.location ? { lat: family.location.lat, lng: family.location.lng } : null
   const zone = sos ? SAFE_ZONES.find((z) => z.id === sos.zoneId) : null
-  const route = sos ? { coordinates: sos.route, distance: sos.distance, duration: sos.duration } : null
+  const route = sos?.route ? { coordinates: sos.route, distance: sos.distance, duration: sos.duration } : null
 
   // Buzz + open the alert the moment an SOS fires.
   useEffect(() => {
@@ -68,7 +68,8 @@ export default function ParentDashboard({ session, onLeave }) {
             <div className="route-card__title">🆘 {child?.name} нажал SOS</div>
             {zone && (
               <div className="route-card__meta">
-                Идёт к: {zone.name} · 📏 {formatDistance(sos.distance)} · ⏱ {formatDuration(sos.duration)}
+                Идёт к: {zone.name}
+                {sos.distance != null && <> · 📏 {formatDistance(sos.distance)} · ⏱ {formatDuration(sos.duration)}</>}
               </div>
             )}
             <div className="alert-actions">
@@ -87,8 +88,10 @@ export default function ParentDashboard({ session, onLeave }) {
           <h1 className="alert-overlay__title">SOS от {child?.name}</h1>
           {zone && (
             <p className="alert-overlay__sub">
-              Идёт к безопасной зоне «{zone.name}»<br />
-              📏 {formatDistance(sos.distance)} · ⏱ {formatDuration(sos.duration)} пешком
+              Идёт к безопасной зоне «{zone.name}»
+              {sos.distance != null && (
+                <><br />📏 {formatDistance(sos.distance)} · ⏱ {formatDuration(sos.duration)} пешком</>
+              )}
             </p>
           )}
           <p className="alert-overlay__coords">📍 {sos.lat.toFixed(5)}, {sos.lng.toFixed(5)}</p>

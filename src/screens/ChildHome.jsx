@@ -51,26 +51,32 @@ export default function ChildHome({ session, onLeave }) {
       return
     }
     setDestination(near.zone)
-    setMessage('🛣 Строим маршрут…')
 
+    // 1) Alert the parent IMMEDIATELY — never gate the SOS on routing.
+    const base = {
+      lat: user.lat,
+      lng: user.lng,
+      zoneId: near.zone.id,
+      zoneName: near.zone.name,
+      zonePhone: near.zone.phone,
+    }
+    setSosActive(true)
+    raiseSOS(code, base)
+    setMessage('✅ Родитель уведомлён! Строим маршрут…')
+
+    // 2) Then build the route (best-effort) and enrich the alert.
     try {
       const built = await getWalkingRoute(user, near.zone)
       setRoute(built)
-      setSosActive(true)
-      // Notify the parent in real time.
       raiseSOS(code, {
-        lat: user.lat,
-        lng: user.lng,
-        zoneId: near.zone.id,
-        zoneName: near.zone.name,
-        zonePhone: near.zone.phone,
+        ...base,
         route: built.coordinates,
         distance: built.distance,
         duration: built.duration,
       })
-      setMessage('✅ Родитель уведомлён! Иди к безопасной зоне')
+      setMessage(`✅ Родитель уведомлён! Иди к: ${near.zone.name}`)
     } catch {
-      setMessage('❌ Не удалось построить маршрут. Попробуй ещё раз')
+      setMessage(`✅ Родитель уведомлён. Иди к: ${near.zone.name}`)
     } finally {
       setIsSearching(false)
     }

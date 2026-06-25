@@ -5,6 +5,7 @@ import { initializeApp } from 'firebase/app'
 import {
   initializeFirestore, collection, doc, setDoc, addDoc, getDocs, deleteDoc, query, where,
 } from 'firebase/firestore'
+import { SAFE_ZONES } from './src/data/safeZones.js'
 
 const cfg = {
   apiKey: 'AIzaSyBuuImF7bsEgOQAB0_LFAjcGdmalDvsvPI',
@@ -91,10 +92,25 @@ async function seed() {
   console.log(`seeded ${FAMILIES} families, ${kids} children, ${sos} SOS, ${statuses} statuses (all demo:true)`)
 }
 
+// Real safe zones (NOT demo-flagged — these are the actual data).
+async function seedZones() {
+  const snap = await getDocs(collection(db, 'zones'))
+  if (snap.size > 0) {
+    console.log(`zones already exist (${snap.size}), skipping`)
+    return
+  }
+  for (const z of SAFE_ZONES) {
+    const { id, ...rest } = z
+    await addDoc(collection(db, 'zones'), rest)
+  }
+  console.log(`seeded ${SAFE_ZONES.length} safe zones`)
+}
+
 const mode = process.argv[2]
 try {
   if (mode === '--clear') await clear()
   else if (mode === '--surveys') await seedSurveys()
+  else if (mode === '--zones') await seedZones()
   else {
     await seed()
     await seedSurveys()

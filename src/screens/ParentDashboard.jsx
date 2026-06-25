@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { subscribe } from '../lib/realtime'
-import { SAFE_ZONES } from '../data/safeZones'
+import { useZones } from '../hooks/useZones'
 import { formatDistance, formatDuration } from '../lib/geo'
 import SafeMap from '../components/SafeMap'
 
@@ -89,8 +89,12 @@ export default function ParentDashboard({ session, onLeave }) {
     .map((c) => ({ id: c.id, name: c.name, lat: c.location.lat, lng: c.location.lng, danger: !!c.sos?.active }))
   const routes = sosChildren.filter((c) => c.sos?.route).map((c) => c.sos.route)
 
+  const zones = useZones()
   const primary = sosChildren[0]
-  const primaryZone = primary ? SAFE_ZONES.find((z) => z.id === primary.sos.zoneId) : null
+  const primaryZone = primary ? zones.find((z) => z.id === primary.sos.zoneId) : null
+  // Fall back to the names/phone carried in the SOS payload (robust if the zone list differs).
+  const primaryZoneName = primaryZone?.name || primary?.sos?.zoneName
+  const primaryZonePhone = primaryZone?.phone || primary?.sos?.zonePhone
 
   return (
     <div className="app">
@@ -124,7 +128,7 @@ export default function ParentDashboard({ session, onLeave }) {
       )}
 
       <main className="map-wrap">
-        <SafeMap zones={SAFE_ZONES} people={people} routes={routes} destinationId={primaryZone?.id} />
+        <SafeMap zones={zones} people={people} routes={routes} destinationId={primaryZone?.id} />
         {sosChildren.length > 0 && !alertOpen && (
           <button className="sos-reopen" onClick={() => setAlertOpen(true)}>🆘 Открыть оповещение</button>
         )}
@@ -155,16 +159,16 @@ export default function ParentDashboard({ session, onLeave }) {
             })}
           </div>
 
-          {primary && primaryZone && (
+          {primary && (
             <div className="route-card route-card--alert">
-              <div className="route-card__title">🆘 {primary.name} → {primaryZone.name}</div>
+              <div className="route-card__title">🆘 {primary.name} → {primaryZoneName}</div>
               {primary.sos.distance != null && (
                 <div className="route-card__meta">
                   📏 {formatDistance(primary.sos.distance)} · ⏱ {formatDuration(primary.sos.duration)}
                 </div>
               )}
-              {primaryZone.phone !== '—' && (
-                <a className="route-card__call" href={`tel:${primaryZone.phone}`}>☎ Позвонить в зону</a>
+              {primaryZonePhone && primaryZonePhone !== '—' && (
+                <a className="route-card__call" href={`tel:${primaryZonePhone}`}>☎ Позвонить в зону</a>
               )}
             </div>
           )}
@@ -179,9 +183,9 @@ export default function ParentDashboard({ session, onLeave }) {
           {sosChildren.length > 1 && (
             <p className="alert-overlay__sub">+ ещё {sosChildren.length - 1} в тревоге</p>
           )}
-          {primaryZone && (
+          {primaryZoneName && (
             <p className="alert-overlay__sub">
-              Идёт к безопасной зоне «{primaryZone.name}»
+              Идёт к безопасной зоне «{primaryZoneName}»
               {primary.sos.distance != null && (
                 <><br />📏 {formatDistance(primary.sos.distance)} · ⏱ {formatDuration(primary.sos.duration)} пешком</>
               )}
@@ -189,8 +193,8 @@ export default function ParentDashboard({ session, onLeave }) {
           )}
           <p className="alert-overlay__coords">📍 {primary.sos.lat.toFixed(5)}, {primary.sos.lng.toFixed(5)}</p>
           <button className="btn-primary" onClick={() => setAlertOpen(false)}>Показать на карте</button>
-          {primaryZone && primaryZone.phone !== '—' && (
-            <a className="alert-overlay__call" href={`tel:${primaryZone.phone}`}>☎ Позвонить в «{primaryZone.name}»</a>
+          {primaryZonePhone && primaryZonePhone !== '—' && (
+            <a className="alert-overlay__call" href={`tel:${primaryZonePhone}`}>☎ Позвонить в «{primaryZoneName}»</a>
           )}
         </div>
       )}

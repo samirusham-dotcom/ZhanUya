@@ -8,6 +8,7 @@ import ChildLink from './screens/ChildLink'
 import ChildHome from './screens/ChildHome'
 import Metrics from './screens/Metrics'
 import Survey from './screens/Survey'
+import ZonesAdmin from './screens/ZonesAdmin'
 import './ZhanUya.css'
 
 const ONBOARDED_KEY = 'zhanuya:onboarded'
@@ -30,6 +31,10 @@ export default function App() {
   // Pilot survey — reachable at .../#survey
   if (hash === '#survey') {
     return <Survey />
+  }
+  // Safe-zones admin — reachable at .../#zones
+  if (hash === '#zones') {
+    return <ZonesAdmin />
   }
 
   if (!onboarded) {

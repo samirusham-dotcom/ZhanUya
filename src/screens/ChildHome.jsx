@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useGeolocation } from '../hooks/useGeolocation'
 import { nearestZone, formatDistance, formatDuration } from '../lib/geo'
 import { getWalkingRoute } from '../lib/routing'
-import { SAFE_ZONES } from '../data/safeZones'
+import { useZones } from '../hooks/useZones'
 import SafeMap, { ALMATY } from '../components/SafeMap'
 import { shareLocation, raiseSOS, clearSOS, setStatus } from '../lib/realtime'
 import { logEvent } from '../lib/metrics'
@@ -13,6 +13,7 @@ const QUICK_STATUSES = ['Вышел из школы', 'Сел в автобус'
 export default function ChildHome({ session, onLeave }) {
   const code = session.code
   const childId = session.childId
+  const zones = useZones()
   const { position, status } = useGeolocation()
   const [useDemo, setUseDemo] = useState(false)
   const [destination, setDestination] = useState(null)
@@ -55,7 +56,7 @@ export default function ChildHome({ session, onLeave }) {
     setDestination(null)
     setMessage('🔍 Ищем ближайшую безопасную зону…')
 
-    const near = nearestZone(user, SAFE_ZONES)
+    const near = nearestZone(user, zones)
     if (!near) {
       setIsSearching(false)
       setMessage('❌ Безопасная зона не найдена поблизости')
@@ -147,7 +148,7 @@ export default function ChildHome({ session, onLeave }) {
           </div>
         )}
         {!locating && !blocked && (
-          <SafeMap zones={SAFE_ZONES} people={people} routes={routes} destinationId={destination?.id} />
+          <SafeMap zones={zones} people={people} routes={routes} destinationId={destination?.id} />
         )}
       </main>
 

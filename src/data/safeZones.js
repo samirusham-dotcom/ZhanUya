@@ -1,0 +1,30 @@
+// Curated "safe zones" for Almaty — vetted public/partner points a child can walk to.
+// NOTE: coordinates are approximate and MUST be field-verified before the real pilot (M4).
+// Types drive the map glyph: pharmacy 💊 · school 🎓 · mall 🏬 · clinic 🏥 · police 🚓 · public 🏛
+export const SAFE_ZONES = [
+  { id: 'z01', name: 'Mega Almaty',            type: 'mall',     lat: 43.2019, lng: 76.8917, address: 'ул. Розыбакиева, 247А',        phone: '+7 727 339 8888' },
+  { id: 'z02', name: 'Dostyk Plaza',           type: 'mall',     lat: 43.2331, lng: 76.9568, address: 'пр. Достык, 111',             phone: '+7 727 330 1010' },
+  { id: 'z03', name: 'Esentai Mall',           type: 'mall',     lat: 43.1986, lng: 76.9286, address: 'пр. Аль-Фараби, 77/8',        phone: '+7 727 277 9999' },
+  { id: 'z04', name: 'MEGA Park',              type: 'mall',     lat: 43.2386, lng: 76.9405, address: 'ул. Макатаева, 127',          phone: '+7 727 339 8800' },
+  { id: 'z05', name: 'Forum Almaty',           type: 'mall',     lat: 43.2607, lng: 76.9426, address: 'пр. Сейфуллина, 617',         phone: '+7 727 312 2525' },
+  { id: 'z06', name: 'ТРЦ Almaly',             type: 'mall',     lat: 43.2569, lng: 76.9286, address: 'ул. Гоголя, 58',              phone: '+7 727 273 0000' },
+  { id: 'z07', name: 'Аптека Europharma',      type: 'pharmacy', lat: 43.2560, lng: 76.9285, address: 'ул. Богенбай батыра, 142',    phone: '+7 727 250 0050' },
+  { id: 'z08', name: 'Аптека Садыхан',         type: 'pharmacy', lat: 43.2480, lng: 76.9150, address: 'пр. Абая, 90',                phone: '+7 727 250 0500' },
+  { id: 'z09', name: 'Аптека Биосфера',        type: 'pharmacy', lat: 43.2400, lng: 76.9450, address: 'ул. Жибек Жолы, 64',          phone: '+7 727 273 4040' },
+  { id: 'z10', name: 'Аптека Плюс 24/7',       type: 'pharmacy', lat: 43.2300, lng: 76.8900, address: 'мкр. Самал-2, 58',           phone: '+7 727 264 1111' },
+  { id: 'z11', name: 'Аптека Дамумед',         type: 'pharmacy', lat: 43.2650, lng: 76.9400, address: 'ул. Кабанбай батыра, 87',     phone: '+7 727 233 2233' },
+  { id: 'z12', name: 'НИШ ФМН Алматы',         type: 'school',   lat: 43.2207, lng: 76.8580, address: 'мкр. Мамыр-1, 33',           phone: '+7 727 244 0404' },
+  { id: 'z13', name: 'Гимназия №159',          type: 'school',   lat: 43.2450, lng: 76.9100, address: 'ул. Тимирязева, 42',          phone: '+7 727 274 5050' },
+  { id: 'z14', name: 'Школа-лицей №165',       type: 'school',   lat: 43.2350, lng: 76.9300, address: 'ул. Байтурсынова, 78',        phone: '+7 727 292 6060' },
+  { id: 'z15', name: 'Университет KIMEP',      type: 'school',   lat: 43.2360, lng: 76.9560, address: 'пр. Абая, 4',                 phone: '+7 727 270 4200' },
+  { id: 'z16', name: 'КазНУ им. аль-Фараби',   type: 'school',   lat: 43.2110, lng: 76.8870, address: 'пр. Аль-Фараби, 71',          phone: '+7 727 377 3330' },
+  { id: 'z17', name: 'Детская поликлиника №6', type: 'clinic',   lat: 43.2580, lng: 76.9450, address: 'ул. Кунаева, 21',             phone: '+7 727 273 7070' },
+  { id: 'z18', name: 'Городская поликлиника №5',type: 'clinic',  lat: 43.2480, lng: 76.8900, address: 'мкр. Орбита-1, 12',          phone: '+7 727 220 8080' },
+  { id: 'z19', name: 'Скорая помощь (станция)', type: 'clinic',  lat: 43.2520, lng: 76.9200, address: 'ул. Шевченко, 159',           phone: '103' },
+  { id: 'z20', name: 'РОВД Медеуского района', type: 'police',   lat: 43.2540, lng: 76.9290, address: 'ул. Достык, 64',              phone: '102' },
+  { id: 'z21', name: 'Полиция (участок Алмалы)',type: 'police',  lat: 43.2480, lng: 76.9400, address: 'ул. Толе би, 155',            phone: '102' },
+  { id: 'z22', name: 'Парк им. Панфилова',     type: 'public',   lat: 43.2587, lng: 76.9536, address: 'ул. Гоголя / Зенкова',        phone: '—' },
+  { id: 'z23', name: 'Площадь Республики',     type: 'public',   lat: 43.2390, lng: 76.9450, address: 'пр. Достык / Сатпаева',       phone: '—' },
+  { id: 'z24', name: 'Зелёный базар',          type: 'public',   lat: 43.2620, lng: 76.9530, address: 'ул. Жибек Жолы, 53',          phone: '+7 727 273 9090' },
+  { id: 'z25', name: 'Театр оперы им. Абая',   type: 'public',   lat: 43.2520, lng: 76.9430, address: 'ул. Кабанбай батыра, 110',    phone: '+7 727 272 7934' },
+]

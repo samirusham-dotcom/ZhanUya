@@ -1,5 +1,28 @@
-import ZhanUya from './ZhanUya.jsx'
+import { useSession } from './lib/session'
+import RoleSelect from './screens/RoleSelect'
+import ParentSetup from './screens/ParentSetup'
+import ParentDashboard from './screens/ParentDashboard'
+import ChildLink from './screens/ChildLink'
+import ChildHome from './screens/ChildHome'
+import './ZhanUya.css'
 
 export default function App() {
-  return <ZhanUya />
+  const [session, update, reset] = useSession()
+
+  if (!session.role) {
+    return <RoleSelect onPick={(role, name) => update({ role, name })} />
+  }
+
+  if (session.role === 'parent') {
+    if (!session.code) {
+      return <ParentSetup name={session.name} onCreated={(code) => update({ code })} onBack={reset} />
+    }
+    return <ParentDashboard session={session} onLeave={reset} />
+  }
+
+  // child
+  if (!session.code) {
+    return <ChildLink name={session.name} onJoined={(code, childId) => update({ code, childId })} onBack={reset} />
+  }
+  return <ChildHome session={session} onLeave={reset} />
 }

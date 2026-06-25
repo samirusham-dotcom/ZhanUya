@@ -207,3 +207,175 @@
   0% { transform: scale(0.6); opacity: 0.9; }
   100% { transform: scale(2.2); opacity: 0; }
 }
+
+/* ===== M2: roles, linking, alerts ===== */
+
+/* Centered onboarding screens (role select / setup / link) */
+.screen {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 24px;
+  background: linear-gradient(160deg, #0f172a 0%, #1e293b 100%);
+  color: #e2e8f0;
+  text-align: center;
+}
+.screen__hero { margin-bottom: 8px; }
+.screen__brand { font-size: 30px; font-weight: 800; }
+.screen__sub { font-size: 14px; color: #94a3b8; max-width: 320px; margin: 8px auto 0; line-height: 1.5; }
+
+.field {
+  width: 100%;
+  max-width: 320px;
+  padding: 14px 16px;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  background: #0b1220;
+  color: #f1f5f9;
+  font-size: 16px;
+  text-align: center;
+}
+.field--code { letter-spacing: 10px; font-size: 28px; font-weight: 700; padding-left: 26px; }
+.field-error { color: #fca5a5; font-size: 13px; }
+
+.role-grid { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 320px; }
+.role-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 18px;
+  border: 1px solid #334155;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.04);
+  color: #e2e8f0;
+  cursor: pointer;
+  text-align: left;
+  transition: transform 0.08s ease, border-color 0.2s ease;
+}
+.role-card:active { transform: scale(0.98); }
+.role-card:hover { border-color: var(--accent); }
+.role-card__emoji { font-size: 30px; }
+.role-card__title { font-size: 17px; font-weight: 700; }
+.role-card__desc { font-size: 13px; color: #94a3b8; }
+
+.btn-primary {
+  width: 100%;
+  max-width: 320px;
+  padding: 16px;
+  border: none;
+  border-radius: 14px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.btn-primary:disabled { opacity: 0.5; cursor: default; }
+.link-back { background: none; border: none; color: #94a3b8; font-size: 14px; cursor: pointer; }
+
+/* Top-bar role switch */
+.topbar__role {
+  background: none;
+  border: 1px solid #cbd5e1;
+  color: var(--muted);
+  border-radius: 8px;
+  font-size: 12px;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+.status-danger { color: var(--danger); font-weight: 800; }
+
+/* Link / code banners */
+.link-banner {
+  flex: 0 0 auto;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--safe);
+  padding: 6px 12px;
+  z-index: 999;
+}
+.code-banner {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  z-index: 999;
+}
+.code-banner__code { font-size: 34px; font-weight: 800; letter-spacing: 6px; }
+
+/* Child "I'm OK" button */
+.ok-btn {
+  width: 100%;
+  padding: 16px;
+  border: none;
+  border-radius: 16px;
+  background: var(--safe);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+/* Parent alert pieces */
+.route-card--alert { border: 2px solid var(--danger); }
+.alert-actions { display: flex; gap: 8px; margin-top: 10px; }
+.sos-reopen {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 800;
+  background: var(--danger);
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 10px 18px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.5);
+}
+
+.alert-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 28px;
+  text-align: center;
+  color: #fff;
+  background: rgba(127, 13, 13, 0.97);
+  animation: alertflash 1s ease-in-out infinite alternate;
+}
+@keyframes alertflash {
+  from { background: rgba(127, 13, 13, 0.97); }
+  to { background: rgba(185, 28, 28, 0.97); }
+}
+.alert-overlay__pulse { font-size: 64px; animation: pulse-grow 0.9s ease-in-out infinite; }
+@keyframes pulse-grow { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
+.alert-overlay__title { font-size: 28px; font-weight: 800; margin: 0; }
+.alert-overlay__sub { font-size: 15px; margin: 0; line-height: 1.5; opacity: 0.95; }
+.alert-overlay__coords { font-size: 13px; opacity: 0.8; margin: 0; }
+.alert-overlay__call {
+  color: #fff;
+  text-decoration: none;
+  font-weight: 700;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 12px;
+  padding: 12px 20px;
+}

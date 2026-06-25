@@ -1,26 +1,38 @@
-import { useState } from 'react'
-import { useGeolocation } from './hooks/useGeolocation'
-import { nearestZone, formatDistance, formatDuration } from './lib/geo'
-import { getWalkingRoute } from './lib/routing'
-import { SAFE_ZONES } from './data/safeZones'
-import SafeMap, { ALMATY } from './components/SafeMap'
-import './ZhanUya.css'
+import { useEffect, useRef, useState } from 'react'
+import { useGeolocation } from '../hooks/useGeolocation'
+import { nearestZone, formatDistance, formatDuration } from '../lib/geo'
+import { getWalkingRoute } from '../lib/routing'
+import { SAFE_ZONES } from '../data/safeZones'
+import SafeMap, { ALMATY } from '../components/SafeMap'
+import { shareLocation, raiseSOS, clearSOS } from '../lib/realtime'
 
-// Demo start point (used when real geolocation is unavailable / far from Almaty),
-// so the SOS flow is always demoable in a video or away from the city.
+// Demo start point so SOS is always demoable away from Almaty / when GPS is off.
 const DEMO_LOCATION = { ...ALMATY, accuracy: 15 }
 
-export default function ZhanUya() {
+export default function ChildHome({ session, onLeave }) {
+  const code = session.code
   const { position, status } = useGeolocation()
   const [useDemo, setUseDemo] = useState(false)
   const [destination, setDestination] = useState(null)
   const [route, setRoute] = useState(null)
   const [isSearching, setIsSearching] = useState(false)
   const [message, setMessage] = useState('')
+  const [sosActive, setSosActive] = useState(false)
+  const lastShare = useRef(0)
 
   const user = useDemo ? DEMO_LOCATION : position
   const locating = status === 'locating' && !useDemo
   const blocked = (status === 'denied' || status === 'unavailable') && !useDemo
+
+  // Continuously (throttled ~8s) share live location with the parent.
+  useEffect(() => {
+    if (!user || !code) return
+    const now = Date.now()
+    if (now - lastShare.current > 8000) {
+      lastShare.current = now
+      shareLocation(code, { lat: user.lat, lng: user.lng, accuracy: user.accuracy })
+    }
+  }, [user, code])
 
   async function triggerSOS() {
     if (!user) {
@@ -44,7 +56,19 @@ export default function ZhanUya() {
     try {
       const built = await getWalkingRoute(user, near.zone)
       setRoute(built)
-      setMessage('✅ Маршрут построен — иди к безопасной зоне')
+      setSosActive(true)
+      // Notify the parent in real time.
+      raiseSOS(code, {
+        lat: user.lat,
+        lng: user.lng,
+        zoneId: near.zone.id,
+        zoneName: near.zone.name,
+        zonePhone: near.zone.phone,
+        route: built.coordinates,
+        distance: built.distance,
+        duration: built.duration,
+      })
+      setMessage('✅ Родитель уведомлён! Иди к безопасной зоне')
     } catch {
       setMessage('❌ Не удалось построить маршрут. Попробуй ещё раз')
     } finally {
@@ -52,21 +76,26 @@ export default function ZhanUya() {
     }
   }
 
+  function cancelSOS() {
+    setSosActive(false)
+    setRoute(null)
+    setDestination(null)
+    setMessage('')
+    clearSOS(code)
+  }
+
   return (
     <div className="app">
-      {/* Top status bar — protection mode + auto-detected position */}
       <header className="topbar">
         <div className="topbar__brand">🛡 ZhanUya</div>
         <div className="topbar__status">
-          {user ? (
-            <>Режим защиты активен · {user.lat.toFixed(4)}, {user.lng.toFixed(4)}</>
-          ) : (
-            'Определяем местоположение…'
-          )}
+          {user ? <>Режим защиты активен</> : 'Определяем местоположение…'}
         </div>
+        <button className="topbar__role" onClick={onLeave}>сменить</button>
       </header>
 
-      {/* Map */}
+      <div className="link-banner">🔗 Связано с семьёй · код {code}</div>
+
       <main className="map-wrap">
         {locating && (
           <div className="overlay-center">
@@ -74,23 +103,20 @@ export default function ZhanUya() {
             <p>Получаем геопозицию…</p>
           </div>
         )}
-
         {blocked && (
           <div className="overlay-center">
             <p className="overlay-center__title">📍 Нет доступа к геолокации</p>
-            <p className="overlay-center__sub">Разреши доступ в настройках браузера — или используй демо-режим.</p>
+            <p className="overlay-center__sub">Разреши доступ — или используй демо-режим.</p>
             <button className="btn-secondary" onClick={() => setUseDemo(true)}>
               Включить демо-локацию (Алматы)
             </button>
           </div>
         )}
-
         {!locating && !blocked && (
           <SafeMap user={user} zones={SAFE_ZONES} destination={destination} route={route} />
         )}
       </main>
 
-      {/* Bottom control panel */}
       <section className="panel">
         {message && <div className="status-pill">{message}</div>}
 
@@ -106,23 +132,23 @@ export default function ZhanUya() {
           </div>
         )}
 
-        <button className="sos-btn" onClick={triggerSOS} disabled={isSearching || !user}>
-          {isSearching ? (
-            <><span className="spinner spinner--sm" /> Поиск…</>
-          ) : (
-            <>⚠️ SOS — маршрут до безопасной зоны</>
-          )}
-        </button>
-
-        {!useDemo && user && (
-          <button className="demo-toggle" onClick={() => setUseDemo(true)}>
-            Тест из центра Алматы
+        {!sosActive ? (
+          <button className="sos-btn" onClick={triggerSOS} disabled={isSearching || !user}>
+            {isSearching ? (
+              <><span className="spinner spinner--sm" /> Поиск…</>
+            ) : (
+              <>⚠️ SOS — оповестить родителя</>
+            )}
           </button>
+        ) : (
+          <button className="ok-btn" onClick={cancelSOS}>✅ Я в порядке — отменить SOS</button>
+        )}
+
+        {user && !useDemo && (
+          <button className="demo-toggle" onClick={() => setUseDemo(true)}>Тест из центра Алматы</button>
         )}
         {useDemo && (
-          <button className="demo-toggle" onClick={() => setUseDemo(false)}>
-            ← Вернуться к моей геопозиции
-          </button>
+          <button className="demo-toggle" onClick={() => setUseDemo(false)}>← Вернуться к моей геопозиции</button>
         )}
       </section>
     </div>

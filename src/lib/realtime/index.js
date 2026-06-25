@@ -1,5 +1,4 @@
-// Active real-time transport. M2a uses the local (BroadcastChannel) adapter.
-// M2b: when VITE_FIREBASE_* is configured, re-export from './firebase' instead —
-// the interface (createFamily/joinFamily/shareLocation/raiseSOS/clearSOS/subscribe)
-// is identical, so no screen code changes.
-export * from './local'
+// Active real-time transport.
+// M2b: Firestore (cross-device, real phone-to-phone). The local BroadcastChannel
+// adapter remains in ./local for offline/demo use — same interface either way.
+export * from './firebase'

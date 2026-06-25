@@ -4,14 +4,17 @@ import { joinFamily } from '../lib/realtime'
 export default function ChildLink({ name, onJoined, onBack }) {
   const [code, setCode] = useState('')
   const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
 
-  function join() {
+  async function join() {
     setError('')
+    setBusy(true)
     try {
-      const { childId } = joinFamily(code.trim(), name)
+      const { childId } = await joinFamily(code.trim(), name)
       onJoined(code.trim(), childId)
     } catch (e) {
-      setError(e.message)
+      setError(e.message || 'Не удалось подключиться')
+      setBusy(false)
     }
   }
 
@@ -32,12 +35,10 @@ export default function ChildLink({ name, onJoined, onBack }) {
       />
       {error && <div className="field-error">{error}</div>}
 
-      <button className="btn-primary" onClick={join} disabled={code.length !== 6}>
-        Связаться с семьёй
+      <button className="btn-primary" onClick={join} disabled={code.length !== 6 || busy}>
+        {busy ? 'Связываем…' : 'Связаться с семьёй'}
       </button>
-      <button className="link-back" onClick={onBack}>
-        ← Назад
-      </button>
+      <button className="link-back" onClick={onBack}>← Назад</button>
     </div>
   )
 }

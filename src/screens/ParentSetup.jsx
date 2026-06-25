@@ -1,9 +1,20 @@
+import { useState } from 'react'
 import { createFamily } from '../lib/realtime'
 
 export default function ParentSetup({ name, onCreated, onBack }) {
-  function create() {
-    const family = createFamily(name)
-    onCreated(family.code)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+
+  async function create() {
+    setBusy(true)
+    setError('')
+    try {
+      const family = await createFamily(name)
+      onCreated(family.code)
+    } catch {
+      setError('Не удалось создать семью. Проверь интернет и попробуй снова.')
+      setBusy(false)
+    }
   }
 
   return (
@@ -15,12 +26,11 @@ export default function ParentSetup({ name, onCreated, onBack }) {
         </p>
       </div>
 
-      <button className="btn-primary" onClick={create}>
-        Создать семью
+      <button className="btn-primary" onClick={create} disabled={busy}>
+        {busy ? 'Создаём…' : 'Создать семью'}
       </button>
-      <button className="link-back" onClick={onBack}>
-        ← Назад
-      </button>
+      {error && <div className="field-error">{error}</div>}
+      <button className="link-back" onClick={onBack}>← Назад</button>
     </div>
   )
 }

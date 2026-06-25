@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
-import { subscribe, getFamily } from '../lib/realtime'
+import { subscribe } from '../lib/realtime'
 import { SAFE_ZONES } from '../data/safeZones'
 import { formatDistance, formatDuration } from '../lib/geo'
 import SafeMap from '../components/SafeMap'
 
 export default function ParentDashboard({ session, onLeave }) {
   const code = session.code
-  const [family, setFamily] = useState(() => getFamily(code))
+  const [family, setFamily] = useState(null)
   const [alertOpen, setAlertOpen] = useState(false)
   const wasActive = useRef(false)
 

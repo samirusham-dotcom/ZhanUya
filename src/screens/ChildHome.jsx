@@ -5,6 +5,7 @@ import { getWalkingRoute } from '../lib/routing'
 import { SAFE_ZONES } from '../data/safeZones'
 import SafeMap, { ALMATY } from '../components/SafeMap'
 import { shareLocation, raiseSOS, clearSOS, setStatus } from '../lib/realtime'
+import { logEvent } from '../lib/metrics'
 
 const DEMO_LOCATION = { ...ALMATY, accuracy: 15 }
 const QUICK_STATUSES = ['Вышел из школы', 'Сел в автобус', 'Почти дома', 'Я дома ✅']
@@ -26,6 +27,7 @@ export default function ChildHome({ session, onLeave }) {
     setStatus(code, childId, text)
     setSentStatus(text)
     setMessage(`✅ Отправлено родителю: ${text}`)
+    logEvent('status_sent')
   }
 
   const user = useDemo ? DEMO_LOCATION : position
@@ -75,8 +77,10 @@ export default function ChildHome({ session, onLeave }) {
 
     // 1) Alert the parent and CONFIRM it was delivered (don't gate on routing).
     setMessage('🚨 Отправляем сигнал родителю…')
+    const t0 = Date.now()
     try {
       await raiseSOS(code, childId, base)
+      logEvent('sos_sent', { alertMs: Date.now() - t0 })
       setSosActive(true)
       setMessage('✅ Родитель уведомлён! Строим маршрут…')
     } catch {
@@ -200,6 +204,7 @@ export default function ChildHome({ session, onLeave }) {
         {useDemo && (
           <button className="demo-toggle" onClick={() => setUseDemo(false)}>← Вернуться к моей геопозиции</button>
         )}
+        <a className="survey-link" href={`${import.meta.env.BASE_URL}#survey`}>📝 Оставить отзыв о приложении</a>
       </section>
     </div>
   )

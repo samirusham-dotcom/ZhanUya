@@ -168,6 +168,7 @@ export default function ParentDashboard({ session, onLeave }) {
               )}
             </div>
           )}
+          <a className="survey-link" href={`${import.meta.env.BASE_URL}#survey`}>📝 Оставить отзыв о приложении</a>
         </section>
       )}
 

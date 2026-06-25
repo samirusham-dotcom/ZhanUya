@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useSession } from './lib/session'
 import Onboarding from './screens/Onboarding'
 import RoleSelect from './screens/RoleSelect'
@@ -6,6 +6,8 @@ import ParentSetup from './screens/ParentSetup'
 import ParentDashboard from './screens/ParentDashboard'
 import ChildLink from './screens/ChildLink'
 import ChildHome from './screens/ChildHome'
+import Metrics from './screens/Metrics'
+import Survey from './screens/Survey'
 import './ZhanUya.css'
 
 const ONBOARDED_KEY = 'zhanuya:onboarded'
@@ -13,6 +15,22 @@ const ONBOARDED_KEY = 'zhanuya:onboarded'
 export default function App() {
   const [session, update, reset] = useSession()
   const [onboarded, setOnboarded] = useState(() => localStorage.getItem(ONBOARDED_KEY) === '1')
+  const [hash, setHash] = useState(window.location.hash)
+
+  useEffect(() => {
+    const onHash = () => setHash(window.location.hash)
+    window.addEventListener('hashchange', onHash)
+    return () => window.removeEventListener('hashchange', onHash)
+  }, [])
+
+  // Pilot results dashboard — reachable at .../#metrics
+  if (hash === '#metrics') {
+    return <Metrics />
+  }
+  // Pilot survey — reachable at .../#survey
+  if (hash === '#survey') {
+    return <Survey />
+  }
 
   if (!onboarded) {
     return (

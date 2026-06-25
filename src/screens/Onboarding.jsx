@@ -41,6 +41,7 @@ export default function Onboarding({ onDone }) {
       {canInstall && (
         <button className="link-back" onClick={promptInstall}>⤓ Установить приложение</button>
       )}
+      <a className="onb-metrics-link" href={`${import.meta.env.BASE_URL}#metrics`}>📊 Статистика пилота</a>
     </div>
   )
 }

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { createFamily } from '../lib/realtime'
+import { logEvent } from '../lib/metrics'
 
 export default function ParentSetup({ name, onCreated, onBack }) {
   const [busy, setBusy] = useState(false)
@@ -10,6 +11,7 @@ export default function ParentSetup({ name, onCreated, onBack }) {
     setError('')
     try {
       const family = await createFamily(name)
+      logEvent('family_created')
       onCreated(family.code)
     } catch {
       setError('Не удалось создать семью. Проверь интернет и попробуй снова.')

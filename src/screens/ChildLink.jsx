@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { joinFamily } from '../lib/realtime'
+import { logEvent } from '../lib/metrics'
 
 // Remember this browser's child identity per family code, so reopening/rejoining
 // the same family reuses the same child instead of creating a ghost duplicate.
@@ -18,6 +19,7 @@ export default function ChildLink({ name, onJoined, onBack }) {
       const existing = localStorage.getItem(childKey(c)) || undefined
       const { childId } = await joinFamily(c, name, existing)
       localStorage.setItem(childKey(c), childId)
+      if (!existing) logEvent('child_linked')
       onJoined(c, childId)
     } catch (e) {
       setError(e.message || 'Не удалось подключиться')

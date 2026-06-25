@@ -21,14 +21,36 @@ function childWord(n) {
   return 'детей'
 }
 
+const cacheKey = (code) => `zhanuya:lastFamily:${code}`
+
+function loadCached(code) {
+  try {
+    return JSON.parse(localStorage.getItem(cacheKey(code)) || 'null')
+  } catch {
+    return null
+  }
+}
+
 export default function ParentDashboard({ session, onLeave }) {
   const code = session.code
-  const [family, setFamily] = useState(null)
+  // Seed from cache for an instant render of last-known state, then go live.
+  const [family, setFamily] = useState(() => loadCached(code))
   const [, setTick] = useState(0) // forces freshness timers to re-render
   const [alertOpen, setAlertOpen] = useState(true)
   const prevSOS = useRef(new Set())
 
-  useEffect(() => subscribe(code, setFamily), [code])
+  useEffect(
+    () =>
+      subscribe(code, (f) => {
+        setFamily(f)
+        try {
+          localStorage.setItem(cacheKey(code), JSON.stringify(f))
+        } catch {
+          /* quota — ignore */
+        }
+      }),
+    [code],
+  )
   useEffect(() => {
     const id = setInterval(() => setTick((t) => t + 1), 5000)
     return () => clearInterval(id)

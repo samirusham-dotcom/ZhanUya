@@ -177,17 +177,22 @@ export default function ChildHome({ session, onLeave }) {
           </div>
         )}
 
-        {!sosActive ? (
-          <button className="sos-btn" onClick={triggerSOS} disabled={isSearching || !user}>
-            {isSearching ? (
-              <><span className="spinner spinner--sm" /> Отправка…</>
-            ) : (
-              <>⚠️ SOS — оповестить родителя</>
-            )}
-          </button>
-        ) : (
-          <button className="ok-btn" onClick={cancelSOS}>✅ Я в порядке — отменить SOS</button>
-        )}
+        <div className="sos-wrap">
+          {!sosActive ? (
+            <>
+              <button className="sos-btn" onClick={triggerSOS} disabled={isSearching || !user}>
+                {isSearching ? (
+                  <span className="spinner spinner--lg" />
+                ) : (
+                  <span className="sos-btn__label">SOS</span>
+                )}
+              </button>
+              <div className="sos-hint">Нажми при опасности — родитель получит сигнал и маршрут</div>
+            </>
+          ) : (
+            <button className="ok-btn" onClick={cancelSOS}>✅ Я в порядке — отменить SOS</button>
+          )}
+        </div>
 
         {user && !useDemo && (
           <button className="demo-toggle" onClick={() => setUseDemo(true)}>Тест из центра Алматы</button>

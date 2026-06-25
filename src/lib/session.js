@@ -1,14 +1,17 @@
 import { useCallback, useEffect, useState } from 'react'
 
-// Per-tab session (role + name + linked family code). Stored in sessionStorage
-// (NOT localStorage) so you can be a parent in one tab and a child in another —
-// which is exactly how M2a is demoed on a single machine. Family data lives in
-// localStorage (shared across tabs) so the two roles see each other.
+// Persistent session (role + name + linked family code + childId), stored in
+// localStorage so the INSTALLED app remembers the user across restarts — a child
+// in an emergency must not have to re-select a role and re-type a code.
+//
+// Note for same-machine testing: because this persists per-browser, test the two
+// roles in a normal window + an incognito window (or two devices/browsers). On
+// two real phones it "just works".
 const KEY = 'zhanuya:session'
 
 function load() {
   try {
-    return JSON.parse(sessionStorage.getItem(KEY) || '{}')
+    return JSON.parse(localStorage.getItem(KEY) || '{}')
   } catch {
     return {}
   }
@@ -18,7 +21,7 @@ export function useSession() {
   const [session, setSession] = useState(load)
 
   useEffect(() => {
-    sessionStorage.setItem(KEY, JSON.stringify(session))
+    localStorage.setItem(KEY, JSON.stringify(session))
   }, [session])
 
   const update = useCallback((patch) => setSession((s) => ({ ...s, ...patch })), [])

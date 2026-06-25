@@ -103,26 +103,48 @@
   font-size: 14px;
 }
 
-/* ---- SOS button ---- */
+/* ---- SOS button (big circular panic button) ---- */
+.sos-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding-top: 2px;
+}
 .sos-btn {
+  position: relative;
+  width: 168px;
+  height: 168px;
+  border-radius: 50%;
+  border: none;
+  background: radial-gradient(circle at 50% 38%, #f05252 0%, #dc2626 60%, #b91c1c 100%);
+  color: #fff;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  width: 100%;
-  padding: 18px;
-  border: none;
-  border-radius: 16px;
-  background: var(--danger);
-  color: #fff;
-  font-size: 17px;
-  font-weight: 800;
-  cursor: pointer;
-  box-shadow: 0 6px 20px rgba(220, 38, 38, 0.5);
+  box-shadow: 0 10px 34px rgba(220, 38, 38, 0.55), inset 0 -5px 12px rgba(0, 0, 0, 0.25);
   transition: transform 0.08s ease, opacity 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
 }
-.sos-btn:active { transform: scale(0.98); }
-.sos-btn:disabled { opacity: 0.6; cursor: default; box-shadow: none; }
+/* expanding ring to draw the eye */
+.sos-btn::before {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 3px solid rgba(220, 38, 38, 0.55);
+  animation: sosring 1.9s ease-out infinite;
+}
+@keyframes sosring {
+  0% { transform: scale(1); opacity: 0.85; }
+  100% { transform: scale(1.28); opacity: 0; }
+}
+.sos-btn__label { font-size: 46px; font-weight: 900; letter-spacing: 3px; }
+.sos-btn:active { transform: scale(0.95); }
+.sos-btn:disabled { opacity: 0.55; cursor: default; box-shadow: none; }
+.sos-btn:disabled::before { display: none; }
+.sos-hint { font-size: 12px; color: #94a3b8; text-align: center; max-width: 250px; line-height: 1.4; }
 
 .btn-secondary {
   padding: 12px 20px;
@@ -154,6 +176,7 @@
   animation: spin 0.8s linear infinite;
 }
 .spinner--sm { width: 18px; height: 18px; border-width: 2px; border-top-color: #fff; }
+.spinner--lg { width: 44px; height: 44px; border-width: 4px; border-top-color: #fff; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* ---- Map markers (divIcon) ---- */
